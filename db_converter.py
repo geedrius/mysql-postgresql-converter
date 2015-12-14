@@ -83,7 +83,9 @@ def parse(input_filename, output_filename):
                 creation_lines = []
             # Inserting data into a table?
             elif line.startswith("INSERT INTO"):
-                output.write(line.encode("utf8").replace("'0000-00-00 00:00:00'", "NULL") + "\n")
+                line = line.encode("utf8").replace("'0000-00-00 00:00:00'", "NULL")
+                line = re.sub(r",0x([0-9A-F]{2,}),",r",decode('\1','hex'),", line)
+                output.write(line + "\n")
                 num_inserts += 1
             # ???
             else:
@@ -114,6 +116,9 @@ def parse(input_filename, output_filename):
                     type = "int4"
                     set_sequence = True
                     final_type = "boolean"
+                elif type.startswith("tinyint("):
+                    type = "smallint"
+                    set_sequence = True
                 elif type.startswith("int("):
                     type = "integer"
                     set_sequence = True
@@ -133,10 +138,12 @@ def parse(input_filename, output_filename):
                     type = "int2"
                     set_sequence = True
                 elif type == "datetime":
-                    type = "timestamp with time zone"
+                    type = "timestamp"
                 elif type == "double":
                     type = "double precision"
                 elif type == "blob":
+                    type = "bytea"
+                elif type == "longblob":
                     type = "bytea"
                 elif type.startswith("enum(") or type.startswith("set("):
 
